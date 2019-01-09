@@ -1,8 +1,13 @@
 #include <iostream>
+#include <unordered_map>
 
 using namespace std;
 
 #define/* asd  asd */dat/* asd  asd */0x20
+
+#define logger cerr
+#define errorLogger logger << "[Error] "
+#define warningLogger logger << "[Warning] "
 
 enum class MacroState {idle, keyword, identifier, expression};
 enum class MacroKeyword {idle, define, undef, ifdef, ifudef};
@@ -10,9 +15,19 @@ enum class CommentState {idle, paraComment, lineComment};
 enum class CommentIndicatorState {idle, startSlash, paraEndAster};
 enum class StringState {idle, inString};
 
+/\
+*
+*/ # /*
+*/ defi\
+ne FO\
+O 10\
+20
+
+#define asd "foo\\""bar"
+
 int main(int argc, char const *argv[])
 {
-	cout << dat/* asd  asd */ << endl;
+	cout << dat/* asd  asd */ << FOO << asd << endl;
 
 	FILE *fin = fopen("test.cpp", "r");
 
@@ -21,8 +36,10 @@ int main(int argc, char const *argv[])
 	CommentState commentState = CommentState::idle;
 	CommentIndicatorState commentIndicatorState = CommentIndicatorState::idle;
 	StringState stringState = StringState::idle;
-	char c;
 
+	unordered_map<string, string> macroHash;
+
+	char c;
 	while ((c = getc(fin)) != EOF) {
 		switch (commentState) {
 			case CommentState::idle:
@@ -41,7 +58,7 @@ int main(int argc, char const *argv[])
 						}
 						break;
 					default:
-						cout << "Error: Impossible CommentIndicatorState when CommentState is idle" << endl;
+						errorLogger << "Impossible CommentIndicatorState when CommentState is idle" << endl;
 				}
 				break;
 			case CommentState::paraComment:
@@ -50,15 +67,15 @@ int main(int argc, char const *argv[])
 						if (c == '*') {
 							commentIndicatorState = CommentIndicatorState::paraEndAster;
 						}
-						break;
+						continue;
 					case CommentIndicatorState::paraEndAster:
 						commentIndicatorState = CommentIndicatorState::idle;
 						if (c == '/') {
 							commentState = CommentState::idle;
 						}
-						break;
+						continue;
 					default:
-						cout << "Error: Impossible CommentIndicatorState when CommentState is paraComment" << endl;
+						errorLogger << "Impossible CommentIndicatorState when CommentState is paraComment" << endl;
 				}
 				break;
 			case CommentState::lineComment:
@@ -84,14 +101,12 @@ int main(int argc, char const *argv[])
 			case CommentIndicatorState::paraEndAster:
 				break;
 			default:
-				cout << " " << endl;
+				errorLogger << " " << endl;
 		}
 
 		switch (macroState) {
 			case MacroState::idle:
 				if (c == '#') {
-					// indicates the beginning of a macro statement
-					// marco keyword must be parsed
 					macroState = MacroState::keyword;
 				}
 				break;
@@ -103,7 +118,7 @@ int main(int argc, char const *argv[])
 			case MacroState::expression:
 				break;
 			default:
-				cout << "Error: Undefined Macro State" << endl;
+				errorLogger << "Undefined Macro State" << endl;
 		}
 	}
 
